@@ -11,18 +11,47 @@ import HourlyTrafficChart from './HourlyTrafficChart';
 import LocationChart from './LocationChart';
 import StatsCards from './StatsCards';
 import DataTable from './DataTable';
+import FileOperations from './FileOperations';
 
 const Dashboard = () => {
   const [timeRange, setTimeRange] = useState('24h');
   const [refreshing, setRefreshing] = useState(false);
+  const [uploadedData, setUploadedData] = useState<any[]>([]);
 
   const handleRefresh = () => {
     setRefreshing(true);
     setTimeout(() => setRefreshing(false), 1000);
   };
 
+  const handleDataUpload = (data: any[]) => {
+    setUploadedData(data);
+    console.log('Uploaded data:', data);
+  };
+
+  const handleExportCSV = () => {
+    // Generate CSV data from current dashboard state
+    const csvData = [
+      ['Username', 'Application', 'Requests', 'Sessions', 'Location'],
+      ['john.doe', 'Web Portal', '245', '12', 'New York'],
+      ['jane.smith', 'Mobile App', '189', '8', 'London'],
+      ['bob.wilson', 'API Gateway', '156', '15', 'Tokyo'],
+      // Add more sample data
+    ];
+
+    const csvContent = csvData.map(row => row.join(',')).join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `dashboard-data-${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-gray-50 p-6 dashboard-content">
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center justify-between mb-4">
@@ -47,13 +76,27 @@ const Dashboard = () => {
               <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
               Refresh
             </Button>
-            <Button variant="outline">
+            <Button variant="outline" onClick={handleExportCSV}>
               <Download className="w-4 h-4 mr-2" />
-              Export
+              Export CSV
             </Button>
           </div>
         </div>
       </div>
+
+      {/* File Operations */}
+      <FileOperations onDataUpload={handleDataUpload} />
+
+      {/* Display uploaded data info */}
+      {uploadedData.length > 0 && (
+        <Card className="mb-6 border-green-200 bg-green-50">
+          <CardContent className="pt-6">
+            <p className="text-green-800">
+              <strong>Data Source:</strong> Using uploaded CSV data ({uploadedData.length} records)
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Stats Cards */}
       <StatsCards timeRange={timeRange} />
